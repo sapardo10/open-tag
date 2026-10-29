@@ -115,6 +115,7 @@ All runtimes speak back through the same agent API, so the web app sees one cons
 | Kimi Code | `kimi -p --output-format stream-json` (one-shot per turn, resumed by `-r`; provider in `~/.kimi-code/config.toml`) | Supported |
 | Pi | `pi -p --mode json` (one-shot per turn, resumed by `--session`; provider/model from Pi's own config) | Supported |
 | Cursor | `cursor-agent -p --output-format stream-json` (one-shot per turn, resumed by `--resume`; runs on your Cursor account) | Supported |
+| oMLX | HTTP to the local oMLX server (`/v1/chat/completions`; no CLI or cloud account; models from `~/.omlx/model_settings.json` + `/v1/models`, preferred via `OPEN_TAG_OMLX_MODEL`) | Experimental |
 | Hermes | `hermes chat -q` (one-shot per turn; profiles from `~/.hermes/profiles`, Hermes keeps provider credentials; final-response bridge) | Experimental |
 | Reasonix | `reasonix run --output-format stream-json` (one-shot per turn, resumed by `--resume <session-file>`; models from the resolved `config.toml`) | Experimental |
 

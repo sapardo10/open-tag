@@ -5,6 +5,7 @@ import "../env.js";
 import { db, schema, sql } from "./index.js";
 import { hashToken } from "../server/auth.js";
 import { eq, and } from "drizzle-orm";
+import { listModels } from "../daemon/listModels.js";
 
 export const QA_KEY = "qa-machine-key";
 
@@ -24,11 +25,12 @@ async function main() {
 
   const [m] = await db.insert(machines).values({
     serverId: srv!.id, userId: qa.id, name: "qa-local",
-    apiKeyHash: hashToken(QA_KEY), apiKeyPrefix: QA_KEY.slice(0, 14), runtimes: ["claude", "codex"],
+    apiKeyHash: hashToken(QA_KEY), apiKeyPrefix: QA_KEY.slice(0, 14), runtimes: ["omlx"],
   }).returning();
 
-  const [cody] = await db.insert(agents).values({ serverId: srv!.id, machineId: m!.id, name: "cody", displayName: "Cody", description: "Local full-stack assistant that can edit workspace files and run commands.", model: "sonnet", runtime: "claude" }).returning();
-  const [ada] = await db.insert(agents).values({ serverId: srv!.id, machineId: m!.id, name: "ada", displayName: "Ada", description: "Research and writing assistant.", model: "sonnet", runtime: "claude" }).returning();
+  const installed = await listModels("omlx") ?? [{ id: "gemma-4-E2B-Heretic-Uncensored-mlx-4bit", label: "Gemma 4 E2B (oMLX)", provider: "omlx", default: true }];
+  const [cody] = await db.insert(agents).values({ serverId: srv!.id, machineId: m!.id, name: "cody", displayName: "Cody", description: "Local full-stack assistant that can edit workspace files and run commands.", model: installed[0]?.id, runtime: "omlx" }).returning();
+  const [ada] = await db.insert(agents).values({ serverId: srv!.id, machineId: m!.id, name: "ada", displayName: "Ada", description: "Research and writing assistant.", model: installed[0]?.id, runtime: "omlx" }).returning();
 
   const [gen] = await db.insert(channels).values({ serverId: srv!.id, name: "general", description: "Main collaboration channel", type: "channel" }).returning();
   await db.insert(channelMembers).values([

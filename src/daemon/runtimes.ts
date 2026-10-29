@@ -1,4 +1,4 @@
-// Runtime registry and local detection. Concrete implementations live in claudeRuntime.ts / codexRuntime.ts / copilotRuntime.ts / opencodeRuntime.ts / kimiRuntime.ts / piRuntime.ts / cursorRuntime.ts / hermesRuntime.ts / reasonixRuntime.ts.
+// Runtime registry and local detection. Concrete implementations live in claudeRuntime.ts / codexRuntime.ts / copilotRuntime.ts / opencodeRuntime.ts / kimiRuntime.ts / piRuntime.ts / cursorRuntime.ts / hermesRuntime.ts / reasonixRuntime.ts / omlxRuntime.ts.
 import { execSync } from "node:child_process";
 import { claudeRuntime } from "./claudeRuntime.js";
 import { codexRuntime } from "./codexRuntime.js";
@@ -9,6 +9,7 @@ import { piRuntime } from "./piRuntime.js";
 import { cursorRuntime } from "./cursorRuntime.js";
 import { hermesRuntime } from "./hermesRuntime.js";
 import { reasonixRuntime } from "./reasonixRuntime.js";
+import { omlxRuntime } from "./omlxRuntime.js";
 import type { Runtime } from "./runtime.js";
 
 export type { Runtime, RuntimeSession, RuntimeCallbacks, StartOpts, TrajectoryEntry } from "./runtime.js";
@@ -24,8 +25,8 @@ function has(tool: string): boolean {
   } catch { return false; }
 }
 export function detectRuntimes(): string[] {
-  return ["claude", "codex", "copilot", "kimi", "opencode", "pi", "cursor-agent", "hermes", "reasonix"].filter(has).map((t) => (t === "cursor-agent" ? "cursor" : t));
+  return ["claude", "codex", "copilot", "kimi", "opencode", "pi", "cursor-agent", "hermes", "reasonix", "omlx"].filter(has).map((t) => (t === "cursor-agent" ? "cursor" : t));
 }
 
-const REG: Record<string, Runtime> = { claude: claudeRuntime, codex: codexRuntime, copilot: copilotRuntime, opencode: opencodeRuntime, kimi: kimiRuntime, pi: piRuntime, cursor: cursorRuntime, hermes: hermesRuntime, reasonix: reasonixRuntime };
+const REG: Record<string, Runtime> = { claude: claudeRuntime, codex: codexRuntime, copilot: copilotRuntime, opencode: opencodeRuntime, kimi: kimiRuntime, pi: piRuntime, cursor: cursorRuntime, hermes: hermesRuntime, reasonix: reasonixRuntime, omlx: omlxRuntime };
 export function getRuntime(name: string): Runtime | null { return REG[name] ?? null; }

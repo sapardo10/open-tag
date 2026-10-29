@@ -43,7 +43,7 @@ cat <<EOF
 ✅ dev E2E up (worktree-isolated)
    data dir : $RUN
    login    : http://localhost:$PORT/?as=you
-   agent    : @dev-bot  (claude/sonnet) in #all
+   agent    : @dev-bot  (omlx) in #all
    logs     : $RUN/logs/dev-e2e-{server,daemon}.log
    stop     : npm run dev:e2e:down
 EOF

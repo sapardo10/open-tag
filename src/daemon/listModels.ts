@@ -11,10 +11,15 @@
 //
 // The parse functions are pure (unit-tested against fixtures captured from multica's discovery
 // research) and mirror multica's server/pkg/agent/models.go field-for-field.
+//
+// oMLX is served locally with no list-models CLI: its catalog lives in `~/.omlx/model_settings.json`
+// (`is_default` / `is_hidden` per model). We discover it straight from that file — not a hard-coded
+// table — so the picker reflects what the installed oMLX can actually serve.
 import { spawn, type ChildProcess } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
+import { discoverOmlxModels } from "./omlxRuntime.js";
 
 export interface ThinkingLevel { value: string; label: string; description?: string }
 export interface ModelThinking { levels: ThinkingLevel[]; default?: string }
@@ -271,7 +276,6 @@ function discoverHermesProfiles(): DiscoveredModel[] {
 }
 
 // ── shelling out (not unit-tested — covered by the live E2E run) ──
-
 const LIST_TIMEOUT_MS = 7_000; // a single probe must stay under runtimeModels' 8s WS-RPC budget, else the server gives up while the daemon keeps spawning
 const OUT_CAP = 256 * 1024; // bound memory if a CLI floods stdout
 
@@ -344,6 +348,13 @@ export async function listModels(runtime: string): Promise<DiscoveredModel[] | n
     case "hermes": {
       const profiles = discoverHermesProfiles();
       return profiles.length ? profiles : null;
+    }
+    case "omlx": {
+      // oMLX serves chat models via its OpenAI-compatible server; no list-models CLI, so
+      // read the installed catalog from `~/.omlx/model_settings.json` (`is_default` /
+      // `is_hidden`). Return null (→ static fallback) when oMLX is not installed.
+      const installed = await discoverOmlxModels();
+      return installed.length ? installed : null;
     }
     default:
       return null;

@@ -9,6 +9,17 @@ from `main`; see commit history for fine-grained server/web changes.
 
 ## [Unreleased]
 
+## [0.16.0] — 2026-10-28
+
+### Added
+
+- **oMLX runtime** (`omlxRuntime.ts`): agents can run on models served by a local oMLX server
+  (OpenAI-compatible `/v1/chat/completions`) — no CLI, no cloud account. Each turn exposes a
+  `shell` tool so the model can run `open-tag message check/send`. The model picker is
+  discovered live from `~/.omlx/model_settings.json` plus the server's `/v1/models`;
+  `OPEN_TAG_OMLX_MODEL` selects the preferred model. Self-host machines must restart
+  `npx @fancyboi999/open-tag-daemon@latest` to pick this up.
+
 ### Fixed
 
 - Pi-compatible runtimes can be launched through an explicit `OPEN_TAG_PI_COMMAND`, avoiding
