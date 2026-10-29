@@ -22,7 +22,11 @@ const REQUEST_TIMEOUT_MS = 120_000;
 // model has no hands — so every turn exposes one `shell` function and loops on tool calls.
 const MAX_TOOL_STEPS = 16;
 const SHELL_TIMEOUT_MS = 60_000;
-const TOOL_OUT_MAX = 8000;
+const TOOL_OUT_MAX = 4000;
+// Local models prefill the whole prompt every call and the memory guard rejects oversized ones, so
+// bound the replayed history by size (≈4 chars/token), not just message count.
+const HISTORY_MAX_CHARS = 60_000;
+const HISTORY_MAX_MESSAGES = 40;
 const SHELL_TOOL = {
   type: "function",
   function: {
@@ -151,6 +155,20 @@ function isOmlxModelId(s: string): boolean {
   return /^[A-Za-z][A-Za-z0-9\-_./]*$/.test(s);
 }
 
+/** First history index to replay: newest-first within the char/message budget, cut only at a user message so tool-call/result pairs stay intact (index 0 is the system prompt). */
+export function omlxWindowStart(history: ChatMessage[], maxChars = HISTORY_MAX_CHARS, maxMessages = HISTORY_MAX_MESSAGES): number {
+  let start = history.length;
+  let chars = 0;
+  while (start > 1 && history.length - (start - 1) <= maxMessages) {
+    const next = chars + history[start - 1]!.content.length;
+    if (next > maxChars) break;
+    chars = next;
+    start--;
+  }
+  while (start < history.length && history[start]!.role !== "user") start++;
+  return Math.max(start, 1);
+}
+
 /** Run one model-requested command; never rejects — failures come back as text for the model to react to. */
 export function runShellTool(command: string, cwd: string, env: NodeJS.ProcessEnv, signal?: AbortSignal): Promise<string> {
   return new Promise((resolve) => {
@@ -266,11 +284,7 @@ class OmlxChat {
     this.turnBusy = true;
     this.cb.onActivity("working", "turn");
     // Keep a bounded window (cut only at a user message so tool-call/result pairs stay intact).
-    let start = 1;
-    if (this.history.length > 41) {
-      start = this.history.length - 40;
-      while (start < this.history.length && this.history[start]!.role !== "user") start++;
-    }
+    const start = omlxWindowStart(this.history);
     const turn: ChatMessage[] = [{ role: "user", content: input.text }];
     this.inFlight = new AbortController();
     try {

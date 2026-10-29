@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { discoverOmlxModelsFromSettings, orderOmlxModels, parseOmlxChatReply, resolveOmlxEndpoint, runShellTool } from "./omlxRuntime.js";
+import { discoverOmlxModelsFromSettings, orderOmlxModels, omlxWindowStart, parseOmlxChatReply, resolveOmlxEndpoint, runShellTool } from "./omlxRuntime.js";
 
 function withSettings(body: unknown, fn: (p: string) => void): void {
   const dir = mkdtempSync(path.join(os.tmpdir(), "omlx-test-"));
@@ -70,4 +70,14 @@ test("tool calls: shell calls parse (string or object args), others ignored; run
   assert.deepEqual(reply.toolCalls, [{ id: "c1", command: "echo hi" }]);
   assert.equal(await runShellTool("echo hi", os.tmpdir(), process.env), "hi");
   assert.match(await runShellTool("echo bad >&2; exit 3", os.tmpdir(), process.env), /^exit 3\nbad/);
+});
+
+test("history window: bounded by chars/messages, cut at a user message, keeps pairs intact", () => {
+  const h: any[] = [{ role: "system", content: "s" }];
+  for (let i = 0; i < 10; i++) h.push({ role: "user", content: "u".repeat(100) }, { role: "assistant", content: "", tool_calls: [{}] }, { role: "tool", content: "t".repeat(100) });
+  assert.equal(omlxWindowStart(h, 1_000_000, 100), 1, "everything fits");
+  const s = omlxWindowStart(h, 450, 100);
+  assert.equal(h[s].role, "user");
+  assert.ok(h.slice(s).reduce((n, m) => n + m.content.length, 0) <= 450);
+  assert.ok(omlxWindowStart(h, 1_000_000, 7) > 1);
 });
